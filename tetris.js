@@ -1,6 +1,6 @@
 const DEBUG = true;
 const DRAW_GHOST = true;
-const TICKER_FREQUENCY = 2000;
+const TICKER_FREQUENCY = 500;
 
 const BLOCK_SIZE = 40;
 const HORIZONTAL_BLOCKS = 10;
@@ -27,6 +27,14 @@ arena.appendChild(canvas);
 const context = canvas.getContext("2d");
 context.scale(2, 2);
 
+const DIRECTIONS = {
+  LEFT: 'LEFT',
+  RIGHT: 'RIGHT',
+  DOWN: 'DOWN'
+}
+
+let direction = DIRECTIONS.DOWN;
+
 const pitBlocks = [
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -41,13 +49,13 @@ const pitBlocks = [
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  1, 1, 0, 0, 1, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 1, 1,
+  0, 0, 0, 0, 0, 0, 0, 0, 1, 1,
+  0, 0, 0, 0, 0, 0, 0, 0, 1, 1,
+  0, 0, 0, 0, 0, 0, 0, 0, 1, 1,
+  1, 1, 0, 0, 1, 1, 0, 1, 1, 1,
   1, 0, 0, 0, 1, 0, 0, 0, 1, 1,
-  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+  1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 
 ];
 
 const SHAPES = {
@@ -95,7 +103,7 @@ const SHAPES_ARRAY = [
   SHAPES.Z2
 ];
 
-const rotateArray = (sourceArray, direction = "right") => {
+const rotateArray = (sourceArray, direction = DIRECTIONS.RIGHT) => {
   const size = Math.sqrt(sourceArray.length);
   if (size % 1 !== 0) {
     return sourceArray;
@@ -104,7 +112,7 @@ const rotateArray = (sourceArray, direction = "right") => {
   const array = new Array(size * size);
   for (let i = 0; i < size; i += 1) {
     for (let j = 0; j < size; j += 1) {
-      if (direction === "left") {
+      if (direction === DIRECTIONS.LEFT) {
         array[size * i + j] = sourceArray[size - 1 - i + j * size];
       } else {
         array[size * (i + 1) - (j + 1)] = sourceArray[i + size * j];
@@ -122,7 +130,8 @@ const rotateArray = (sourceArray, direction = "right") => {
 let descendingShape;
 let ticker = undefined;
 const onTick = () => {
-  moveShape('down');
+  direction = DIRECTIONS.DOWN;
+  moveShape(direction);
 
   if (
     descendingShape.position.y >
@@ -287,7 +296,7 @@ const drawBackground = () => {
 };
 
 const rotateShape = (direction) => {
-  if (!['left', 'right'].includes(direction)) {
+  if (![DIRECTIONS.LEFT, DIRECTIONS.RIGHT].includes(direction)) {
     return;
   }
 
@@ -296,18 +305,18 @@ const rotateShape = (direction) => {
 };
 
 const moveShape = (direction) => {
-  if (!['left', 'right', 'down'].includes(direction)) {
+  if (![DIRECTIONS.LEFT, DIRECTIONS.RIGHT, DIRECTIONS.DOWN].includes(direction)) {
     return;
   }
 
   switch (direction) {
-    case 'left':
+    case DIRECTIONS.LEFT:
       descendingShape.position.x =
         descendingShape.position.x > 0 - descendingShape.props.minX ?
         (descendingShape.position.x -= 1) :
         0 - descendingShape.props.minX;
       break
-    case 'right':
+    case DIRECTIONS.RIGHT:
       descendingShape.position.x =
         descendingShape.position.x <
         HORIZONTAL_BLOCKS -
@@ -318,7 +327,7 @@ const moveShape = (direction) => {
         descendingShape.props.boxSize +
         descendingShape.props.rightGap;
       break
-    case 'down':
+    case DIRECTIONS.DOWN:
       descendingShape.position.y += 1;
       break
   }
@@ -348,22 +357,26 @@ const handleKeyboard = (e) => {
   switch (e.code) {
     case "ArrowUp":
     case "KeyW":
-      rotateShape('right');
+      rotateShape(DIRECTIONS.RIGHT);
       break;
     case "ArrowDown":
     case "KeyS":
-      rotateShape('left');
+      direction = DIRECTIONS.DOWN;
+      moveShape(direction);
       break;
     case "ArrowLeft":
     case "KeyA":
-      moveShape('left');
+      direction = DIRECTIONS.LEFT;
+      moveShape(direction);
       break;
     case "ArrowRight":
     case "KeyD":
-      moveShape('right');
+      direction = DIRECTIONS.RIGHT;
+      moveShape(direction);
       break;
     case "Space":
       //       Drop shape
+      direction = DIRECTIONS.DOWN;
       break;
     default:
       start();
@@ -448,6 +461,7 @@ const showDebugInfo = () => {
       return ` ${key}: ${descendingShape.props[key]}`
     });
     debug.innerHTML += `, pos: (${descendingShape.position.x}, ${descendingShape.position.y}) `;
+    debug.innerHTML += `, direction: ${direction}`;
     debug.innerHTML += ']';
   }
 }
